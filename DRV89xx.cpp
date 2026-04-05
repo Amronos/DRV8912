@@ -42,6 +42,7 @@ void DRV89xx::configMotor(byte motor_id, byte hb1, byte hb2, byte pwm_channel, b
 byte DRV89xx::writeRegister(byte address, byte value) {
   uint16_t ret = SPI.transfer16((address << 8) | value);
   delayMicroseconds(1);  // Give the chip a chance to write
+  return ret & 0xFF;
 }
 
 byte DRV89xx::readRegister(byte address) {
