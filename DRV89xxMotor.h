@@ -49,9 +49,9 @@ class DRV89xxMotor
     int8_t _direction = 0;  // -1 = rev, 0 = brake, 1 = forward
     byte _speed = 0;  // 0 to 255
     bool _enabled = false;  // if disabled, motor is free spinning not braking mode, and PWM is not enabled
-    bool _reverse_delay = 0;  // number of milliseconds to brake before reversing direction
-    long int _last_forward = 0;  // last time forward was active
-    long int _last_reverse = 0;  // last time reverse was active
+    uint16_t _reverse_delay = 0;  // number of milliseconds to brake before reversing direction
+    unsigned long _last_forward = 0;  // last time forward was active
+    unsigned long _last_reverse = 0;  // last time reverse was active
     
 
     // configuration
