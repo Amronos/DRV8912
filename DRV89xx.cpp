@@ -2,6 +2,17 @@
 #include "DRV89xx.h"
 #include "DRV89xxRegister.h"
 
+namespace
+{
+constexpr byte IC_STAT_NPOR = 1U << 0;
+constexpr byte IC_STAT_OVP = 1U << 1;
+constexpr byte IC_STAT_UVLO = 1U << 2;
+constexpr byte IC_STAT_OCP = 1U << 3;
+constexpr byte IC_STAT_OLD = 1U << 4;
+constexpr byte IC_STAT_OTW = 1U << 5;
+constexpr byte IC_STAT_OTSD = 1U << 6;
+}  // namespace
+
 DRV89xx::DRV89xx(int cs_pin, int fault_pin, int sleep_pin, int sck_pin, int miso_pin, int mosi_pin) :  
   _spi_settings(4000000, MSBFIRST, SPI_MODE1), 
   _cs_pin(cs_pin), _fault_pin(fault_pin), _sleep_pin(sleep_pin),
@@ -73,29 +84,43 @@ byte DRV89xx::readRegister(byte address) {
 
 
 void DRV89xx::readErrorStatus(bool print, bool reset) {
-  byte ic_stat = readRegister(0x00);
+  const byte ic_stat = readRegister((byte)DRV89xxRegister::IC_STAT);
 
   if (print) {
-    bool fault_pin_active = (digitalRead(_fault_pin) == 0);
-    printf("--- DRV8912 Status ---\n");
-    printf("nFAULT Pin: %s\n", fault_pin_active ? "LOW (FAULT)" : "HIGH (OK)");
-    printf("IC Status (0x00): %02X (POR bit: %d, Fault: %s)\n", 
-           ic_stat, (ic_stat & 0x01), (ic_stat > 1) ? "YES" : "NO");
-    
-    byte ocp1 = readRegister(0x01);
-    byte ocp2 = readRegister(0x02);
-    byte old1 = readRegister(0x04);
-    byte old2 = readRegister(0x05);
-    
-    if (ocp1 || ocp2) printf("OVERCURRENT detected: %02X %02X\n", ocp1, ocp2);
-    if (old1 || old2) printf("OPEN LOAD detected: %02X %02X\n", old1, old2);
-    printf("----------------------\n");
+    logStatus();
   }
   
-  if ((((ic_stat & 0x01) == 0) || digitalRead(_fault_pin) == 0) && reset) {
+  if ((((ic_stat & IC_STAT_NPOR) == 0) || digitalRead(_fault_pin) == 0) && reset) {
     writeRegister((byte)DRV89xxRegister::CONFIG_CTRL, 0x01);
     writeConfig();
   } 
+}
+
+void DRV89xx::logStatus() {
+  const byte ic_stat = readRegister((byte)DRV89xxRegister::IC_STAT);
+  const byte ocp1 = readRegister((byte)DRV89xxRegister::OCP_STAT_1);
+  const byte ocp2 = readRegister((byte)DRV89xxRegister::OCP_STAT_2);
+  const byte ocp3 = readRegister((byte)DRV89xxRegister::OCP_STAT_3);
+  const byte old1 = readRegister((byte)DRV89xxRegister::OLD_STAT_1);
+  const byte old2 = readRegister((byte)DRV89xxRegister::OLD_STAT_2);
+  const byte old3 = readRegister((byte)DRV89xxRegister::OLD_STAT_3);
+  const bool fault_pin_active = (_fault_pin != 0) && (digitalRead(_fault_pin) == 0);
+
+  printf("--- DRV8912 Status ---\n");
+  printf("nFAULT: %s\n", fault_pin_active ? "LOW (FAULT)" : "HIGH (OK)");
+  printf(
+    "IC_STAT=0x%02X NPOR=%u OVP=%u UVLO=%u OCP=%u OLD=%u OTW=%u OTSD=%u\n",
+    ic_stat,
+    (ic_stat & IC_STAT_NPOR) != 0,
+    (ic_stat & IC_STAT_OVP) != 0,
+    (ic_stat & IC_STAT_UVLO) != 0,
+    (ic_stat & IC_STAT_OCP) != 0,
+    (ic_stat & IC_STAT_OLD) != 0,
+    (ic_stat & IC_STAT_OTW) != 0,
+    (ic_stat & IC_STAT_OTSD) != 0);
+  printf("OCP_STAT: %02X %02X %02X\n", ocp1, ocp2, ocp3);
+  printf("OLD_STAT: %02X %02X %02X\n", old1, old2, old3);
+  printf("----------------------\n");
 }
 
 void DRV89xx::writeConfig() {

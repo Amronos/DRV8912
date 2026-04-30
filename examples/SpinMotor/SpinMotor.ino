@@ -10,7 +10,7 @@ void setup() {
   Serial.begin(9600);  // init serial
   pinMode(LED_BUILTIN, OUTPUT);   // initialize digital pin LED_BUILTIN as an output.
 
-  motor_driver.configMotor(0, 1, 5, 0);  // set up motor 0 to use half bridges 1,5 and pwm channel 0
+  motor_driver.configMotor(0, 1, 5, 0, 0);  // set up motor 0 to use half bridges 1,5 and pwm channel 0
   motor_driver.begin(); // init motor driver
 }
 
@@ -19,18 +19,18 @@ void loop() {
   
   digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on
   for (byte i=0;i<255;i++) {
-    motor_driver.setMotor(0, i, DRV89xx_FORWARD);   // ramp up speed to full, then wrap around
+    motor_driver.setMotor(0, i);   // ramp up speed to full, then wrap around
     motor_driver.updateConfig();  // writes new motor values to driver
     delay(25);                    // wait for a 25ms
   }
 
   // apply brakes for 1sec
-  motor_driver.setMotor(0, 0, DRV89xx_BRAKE);   
+  motor_driver.setMotor(0, 0);
   motor_driver.updateConfig();  // writes new motor values to driver
   delay(1000);                    // wait for 1sec
   
   for (byte i=0;i<255;i++) {
-    motor_driver.setMotor(0, i, DRV89xx_REVERSE);   // ramp up speed to full, then wrap around
+    motor_driver.setMotor(0, -static_cast<int16_t>(i));   // ramp up reverse speed to full
     motor_driver.updateConfig();  // writes new motor values to driver
     delay(25);                    // wait for a 25ms
   }

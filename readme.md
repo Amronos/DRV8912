@@ -16,13 +16,13 @@ const int nSleepPin = 14;  // optional, leave 0 if not connected and hardwired
 DRV89xx motor_driver(chipSelectPin, nFaultPin, nSleepPin);
 
 void setup() {
-  motor_driver.configMotor(0, 1, 2, 0);  // set up motor 0 to use half bridges 1,2 and pwm channel 0
+  motor_driver.configMotor(0, 1, 2, 0, 0);  // motor 0 uses half bridges 1,2 and pwm channel 0
   motor_driver.begin(); // init motor driver
 }
 
 void loop() {
-    const byte speed=0;
-    motor_driver.setMotor(0, speed++, DRV89xx_FORWARD);   // ramp up to full speed, then wrap around
+    static int16_t pwm = 0;
+    motor_driver.setMotor(0, pwm++);       // signed PWM: -255..255
     motor_driver.updateConfig();  // send configuration values to driver (for all motors)
     delay(25);                    // wait for a 25ms
 }

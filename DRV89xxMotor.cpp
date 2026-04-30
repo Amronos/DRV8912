@@ -1,6 +1,9 @@
 #include "Arduino.h"
 #include "DRV89xxMotor.h"
 
+#include <algorithm>
+#include <cstdlib>
+
 // #define DEBUG_DRV89xx_MOTORS true
 
 DRV89xxMotor::DRV89xxMotor(byte hb1, byte hb2, byte pwm_channel, byte reverse_delay) : _reverse_delay(reverse_delay), _pwm_channel(pwm_channel) {
@@ -72,10 +75,18 @@ void DRV89xxMotor::disable() {
   _enabled = false;
 }
 
-void DRV89xxMotor::set(byte speed, byte direction) {
+void DRV89xxMotor::setPWM(int16_t pwm) {
   _enabled = true;
-  _speed = speed;
-  _direction = direction;
+
+  const int16_t clamped_pwm = std::clamp<int16_t>(pwm, -255, 255);
+  if (clamped_pwm == 0) {
+    _speed = 0;
+    _direction = 0;
+    return;
+  }
+
+  _speed = static_cast<byte>(std::abs(clamped_pwm));
+  _direction = (clamped_pwm > 0) ? 1 : -1;
 }
 
 void DRV89xxMotor::setBridgeLowsideDisablePWM(byte *settings, DRV89xxHalfBridge &bridge) {
@@ -127,10 +138,10 @@ void DRV89xxMotor::setBridgeOpen(byte *settings, DRV89xxHalfBridge &bridge) {
   BIT_CLEAR(settings[bridge.pwm_ctrl_register], bridge.bitshift_1);  // disable PWM on this half bridge
 }
 
-void DRV89xxMotor::setPWMFrequency(byte *settings, byte _speed) {
+void DRV89xxMotor::setPWMFrequency(byte *settings, byte speed) {
   // Serial.print("Setting PWM channel[");
   // Serial.print(_pwm_channel);
   // Serial.print("]: ");
-  // Serial.println(_speed);
-  settings[(int)DRV89xxRegister::PWM_DUTY_CTRL_1 + _pwm_channel] = _speed;
+  // Serial.println(speed);
+  settings[(int)DRV89xxRegister::PWM_DUTY_CTRL_1 + _pwm_channel] = speed;
 }

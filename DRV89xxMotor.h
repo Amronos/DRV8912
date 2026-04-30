@@ -8,6 +8,7 @@
 #define DRV89xxMotor_h
 
 #include "Arduino.h"
+#include <cstdint>
 #include "DRV89xxRegister.h"
 
 // from https://stackoverflow.com/a/263738/346227
@@ -41,8 +42,8 @@ class DRV89xxMotor
 
     // Disable this motor
     void disable();
-    // Set the speed of this motor
-    void set(byte speed, byte direction);
+    // Set signed PWM for this motor. Negative values reverse direction.
+    void setPWM(int16_t pwm);
     
   private:
     // Process variables
@@ -63,7 +64,7 @@ class DRV89xxMotor
     void setBridgeHSPWM(byte *settings, DRV89xxHalfBridge &bridge);
     void setBridgeOpen(byte *settings, DRV89xxHalfBridge &bridge);
     
-    void setPWMFrequency(byte *settings, byte _speed);
+    void setPWMFrequency(byte *settings, byte speed);
 };
 
 #endif
